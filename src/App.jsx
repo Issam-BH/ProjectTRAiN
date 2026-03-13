@@ -4,6 +4,7 @@ import Options from './components/Options';
 import Checkout from './components/Checkout';
 import Timer from './components/Timer';
 import MyTickets from './components/MyTickets';
+import Cart from './components/Cart';
 import logo from './assets/logo.png';
 
 function App() {
@@ -11,9 +12,14 @@ function App() {
   const [step, setStep] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [travelDetails, setTravelDetails] = useState(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const toggleOption = (id) => {
     setSelectedOptions(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const removeOption = (id) => {
+    setSelectedOptions(prev => prev.filter(x => x !== id));
   };
 
   const calculateTotalBeforeDiscount = () => {
@@ -30,9 +36,28 @@ function App() {
     setStep(2);
   };
 
+  const goHome = () => {
+    setView('booking');
+    setStep(1);
+    setTravelDetails(null);
+    setSelectedOptions([]);
+  };
+
+  const handleCartCheckout = () => {
+    setIsCartOpen(false);
+    setView('booking');
+    setStep(3);
+  };
+
+  const getCartItemCount = () => {
+    let count = 0;
+    if (travelDetails) count += 1;
+    count += selectedOptions.length;
+    return count;
+  };
+
   return (
     <div className="min-h-screen font-sans text-slate-800 relative bg-slate-100 pb-24">
-      
       <div className="absolute top-0 left-0 w-full h-[60vh] bg-blue-950 z-0 bg-[url('https://images.unsplash.com/photo-1474487548417-781cb71495f3?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-950/80 via-blue-900/60 to-slate-100"></div>
       </div>
@@ -42,16 +67,28 @@ function App() {
           src={logo} 
           alt="TRAiN" 
           className="h-28 sm:h-36 w-auto drop-shadow-lg object-contain cursor-pointer" 
-          onClick={() => setView('booking')}
+          onClick={goHome}
         />
-        <div className="hidden sm:flex gap-4 text-white/90 text-sm font-semibold">
+        <div className="flex items-center gap-6 text-white/90 text-sm font-semibold">
           <span 
-            className="hover:text-orange-400 cursor-pointer transition-colors"
+            className="hover:text-orange-400 cursor-pointer transition-colors hidden sm:block"
             onClick={() => setView('tickets')}
           >
             Mes Billets
           </span>
-          <span className="hover:text-orange-400 cursor-pointer transition-colors">Aide</span>
+          <span className="hover:text-orange-400 cursor-pointer transition-colors hidden sm:block">Aide</span>
+          
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className="relative bg-white/10 hover:bg-white/20 p-3 rounded-full backdrop-blur-sm transition-colors border border-white/20"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+            {getCartItemCount() > 0 && (
+              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-blue-950">
+                {getCartItemCount()}
+              </span>
+            )}
+          </button>
         </div>
       </header>
       
@@ -86,10 +123,18 @@ function App() {
             </div>
           </>
         ) : (
-          <MyTickets onBack={() => setView('booking')} />
+          <MyTickets onBack={goHome} />
         )}
       </main>
 
+      <Cart 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+        travelDetails={travelDetails}
+        selectedOptions={selectedOptions}
+        onRemoveOption={removeOption}
+        onCheckout={handleCartCheckout}
+      />
       <Timer />
     </div>
   );
