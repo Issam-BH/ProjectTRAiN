@@ -5,6 +5,7 @@ import Checkout from './components/Checkout';
 import Timer from './components/Timer';
 import MyTickets from './components/MyTickets';
 import Cart from './components/Cart';
+import Login from './components/Login';
 import logo from './assets/logo.png';
 
 function App() {
@@ -17,6 +18,19 @@ function App() {
 
   const toggleOption = (id) => {
     setSelectedOptions(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const removeOption = (id) => {
+    setSelectedOptions(prev => prev.filter(x => x !== id));
+  };
+
+  const calculateTotalBeforeDiscount = () => {
+    const base = travelDetails ? travelDetails.basePrice : 0;
+    const optsPrice = selectedOptions.reduce((acc, id) => {
+      const prices = { 1:3, 2:2, 3:5, 4:1, 5:2.9 };
+      return acc + (prices[id] || 0);
+    }, 0);
+    return base + optsPrice;
   };
 
   const handleValidateSearch = (details) => {
@@ -58,9 +72,16 @@ function App() {
     setStep(3);
   };
 
+  const getCartItemCount = () => {
+    let count = 0;
+    if (travelDetails) count += 1;
+    count += selectedOptions.length;
+    return count;
+  };
+
   return (
     <div className="min-h-screen font-sans text-slate-800 relative bg-slate-100 pb-24">
-      <div className="absolute top-0 left-0 w-full h-[60vh] bg-blue-950 z-0 bg-[url('https://images.unsplash.com/photo-1474487548417-781cb71495f3?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center">
+      <div className="absolute top-0 left-0 w-full h-[60vh] bg-blue-950 z-0 bg-[url('https://www.madame-oreille.com/wp-content/uploads/2021/06/train-sri-sunset.jpg?')] bg-cover bg-center">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-950/80 via-blue-900/60 to-slate-100"></div>
       </div>
 
@@ -78,16 +99,21 @@ function App() {
           >
             Mes Billets
           </span>
-          <span className="hover:text-orange-400 cursor-pointer transition-colors hidden sm:block">Aide</span>
+          <span 
+            className="hover:text-orange-400 cursor-pointer transition-colors hidden sm:block"
+            onClick={() => setView('login')}
+          >
+            Connexion
+          </span>
           
           <button 
             onClick={() => setIsCartOpen(true)}
             className="relative bg-white/10 hover:bg-white/20 p-3 rounded-full backdrop-blur-sm transition-colors border border-white/20"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-            {cart.length > 0 && (
+            {getCartItemCount() > 0 && (
               <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-blue-950">
-                {cart.length}
+                {getCartItemCount()}
               </span>
             )}
           </button>
@@ -95,7 +121,7 @@ function App() {
       </header>
       
       <main className="relative z-10 max-w-3xl mx-auto px-4 mt-4 sm:mt-8">
-        {view === 'booking' ? (
+        {view === 'booking' && (
           <>
             <div className="flex justify-center items-center gap-3 sm:gap-6 mb-8">
               <div className={`flex items-center gap-2 ${step >= 1 ? "text-white" : "text-white/50"}`}>
@@ -130,9 +156,10 @@ function App() {
               )}
             </div>
           </>
-        ) : (
-          <MyTickets onBack={goHome} />
         )}
+
+        {view === 'tickets' && <MyTickets onBack={goHome} />}
+        {view === 'login' && <Login onBack={goHome} />}
       </main>
 
       <Cart 
