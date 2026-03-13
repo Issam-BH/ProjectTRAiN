@@ -3,9 +3,11 @@ import Search from './components/Search';
 import Options from './components/Options';
 import Checkout from './components/Checkout';
 import Timer from './components/Timer';
+import MyTickets from './components/MyTickets';
 import logo from './assets/logo.png';
 
 function App() {
+  const [view, setView] = useState('booking');
   const [step, setStep] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [travelDetails, setTravelDetails] = useState(null);
@@ -36,42 +38,56 @@ function App() {
       </div>
 
       <header className="relative z-10 p-6 flex justify-between items-center max-w-4xl mx-auto">
-        <img src={logo} alt="TRAiN" className="h-28 sm:h-36 w-auto drop-shadow-lg object-contain" />
+        <img 
+          src={logo} 
+          alt="TRAiN" 
+          className="h-28 sm:h-36 w-auto drop-shadow-lg object-contain cursor-pointer" 
+          onClick={() => setView('booking')}
+        />
         <div className="hidden sm:flex gap-4 text-white/90 text-sm font-semibold">
-          <span className="hover:text-orange-400 cursor-pointer transition-colors">Billets</span>
-          <span className="hover:text-orange-400 cursor-pointer transition-colors">Abonnements</span>
+          <span 
+            className="hover:text-orange-400 cursor-pointer transition-colors"
+            onClick={() => setView('tickets')}
+          >
+            Mes Billets
+          </span>
           <span className="hover:text-orange-400 cursor-pointer transition-colors">Aide</span>
         </div>
       </header>
       
       <main className="relative z-10 max-w-3xl mx-auto px-4 mt-4 sm:mt-8">
-        
-        <div className="flex justify-center items-center gap-3 sm:gap-6 mb-8">
-          <div className={`flex items-center gap-2 ${step >= 1 ? "text-white" : "text-white/50"}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 1 ? "bg-orange-500" : "bg-white/20"}`}>1</div>
-            <span className="text-sm font-semibold hidden sm:block">Trajet</span>
-          </div>
-          <div className="w-10 h-0.5 bg-white/30 rounded"></div>
-          <div className={`flex items-center gap-2 ${step >= 2 ? "text-white" : "text-white/50"}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 2 ? "bg-orange-500" : "bg-white/20"}`}>2</div>
-            <span className="text-sm font-semibold hidden sm:block">Options</span>
-          </div>
-          <div className="w-10 h-0.5 bg-white/30 rounded"></div>
-          <div className={`flex items-center gap-2 ${step >= 3 ? "text-white" : "text-white/50"}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 3 ? "bg-orange-500" : "bg-white/20"}`}>3</div>
-            <span className="text-sm font-semibold hidden sm:block">Paiement</span>
-          </div>
-        </div>
+        {view === 'booking' ? (
+          <>
+            <div className="flex justify-center items-center gap-3 sm:gap-6 mb-8">
+              <div className={`flex items-center gap-2 ${step >= 1 ? "text-white" : "text-white/50"}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 1 ? "bg-orange-500" : "bg-white/20"}`}>1</div>
+                <span className="text-sm font-semibold hidden sm:block">Trajet</span>
+              </div>
+              <div className="w-10 h-0.5 bg-white/30 rounded"></div>
+              <div className={`flex items-center gap-2 ${step >= 2 ? "text-white" : "text-white/50"}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 2 ? "bg-orange-500" : "bg-white/20"}`}>2</div>
+                <span className="text-sm font-semibold hidden sm:block">Options</span>
+              </div>
+              <div className="w-10 h-0.5 bg-white/30 rounded"></div>
+              <div className={`flex items-center gap-2 ${step >= 3 ? "text-white" : "text-white/50"}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 3 ? "bg-orange-500" : "bg-white/20"}`}>3</div>
+                <span className="text-sm font-semibold hidden sm:block">Paiement</span>
+              </div>
+            </div>
 
-        <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
-          {step === 1 && <Search onValidate={handleValidateSearch} />}
-          {step === 2 && travelDetails && (
-            <Options selectedOptions={selectedOptions} onToggle={toggleOption} nextStep={() => setStep(3)} prevStep={() => setStep(1)} basePrice={travelDetails.basePrice} />
-          )}
-          {step === 3 && travelDetails && (
-            <Checkout totalBeforeDiscount={calculateTotalBeforeDiscount()} travelDetails={travelDetails} />
-          )}
-        </div>
+            <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
+              {step === 1 && <Search onValidate={handleValidateSearch} />}
+              {step === 2 && travelDetails && (
+                <Options selectedOptions={selectedOptions} onToggle={toggleOption} nextStep={() => setStep(3)} prevStep={() => setStep(1)} basePrice={travelDetails.basePrice} />
+              )}
+              {step === 3 && travelDetails && (
+                <Checkout totalBeforeDiscount={calculateTotalBeforeDiscount()} travelDetails={travelDetails} />
+              )}
+            </div>
+          </>
+        ) : (
+          <MyTickets onBack={() => setView('booking')} />
+        )}
       </main>
 
       <Timer />
