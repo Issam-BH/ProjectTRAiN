@@ -50,11 +50,11 @@ export default function Search({ onValidate }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:border-blue-300 transition-colors">
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Gare de départ</label>
-            <input type="text" value={departure} onChange={e => setDeparture(e.target.value)} className="w-full text-lg font-bold text-blue-950 bg-transparent border-none outline-none mt-1" />
+            <input type="text" placeholder="Ex: Paris" value={departure} onChange={e => setDeparture(e.target.value)} className="w-full text-lg font-bold text-blue-950 bg-transparent border-none outline-none mt-1" />
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:border-blue-300 transition-colors">
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Gare d'arrivée</label>
-            <input type="text" value={arrival} onChange={e => setArrival(e.target.value)} className="w-full text-lg font-bold text-blue-950 bg-transparent border-none outline-none mt-1" />
+            <input type="text" placeholder="Ex: Lyon" value={arrival} onChange={e => setArrival(e.target.value)} className="w-full text-lg font-bold text-blue-950 bg-transparent border-none outline-none mt-1" />
           </div>
         </div>
 
