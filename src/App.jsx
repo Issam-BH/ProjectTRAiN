@@ -13,27 +13,36 @@ function App() {
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [travelDetails, setTravelDetails] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cart, setCart] = useState([]);
 
   const toggleOption = (id) => {
     setSelectedOptions(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const removeOption = (id) => {
-    setSelectedOptions(prev => prev.filter(x => x !== id));
-  };
-
-  const calculateTotalBeforeDiscount = () => {
-    const base = travelDetails ? travelDetails.basePrice : 0;
-    const optsPrice = selectedOptions.reduce((acc, id) => {
-      const prices = { 1:3, 2:2, 3:5, 4:1, 5:2.9 };
-      return acc + (prices[id] || 0);
-    }, 0);
-    return base + optsPrice;
-  };
-
   const handleValidateSearch = (details) => {
     setTravelDetails(details);
     setStep(2);
+  };
+
+  const addToCart = () => {
+    const newItem = {
+      id: Math.random().toString(36).substring(2, 9),
+      travelDetails,
+      selectedOptions
+    };
+    setCart([...cart, newItem]);
+    setTravelDetails(null);
+    setSelectedOptions([]);
+    setStep(1);
+    setIsCartOpen(true);
+  };
+
+  const removeFromCart = (id) => {
+    setCart(cart.filter(item => item.id !== id));
+    if (cart.length === 1) {
+      setStep(1);
+      setIsCartOpen(false);
+    }
   };
 
   const goHome = () => {
@@ -47,13 +56,6 @@ function App() {
     setIsCartOpen(false);
     setView('booking');
     setStep(3);
-  };
-
-  const getCartItemCount = () => {
-    let count = 0;
-    if (travelDetails) count += 1;
-    count += selectedOptions.length;
-    return count;
   };
 
   return (
@@ -83,9 +85,9 @@ function App() {
             className="relative bg-white/10 hover:bg-white/20 p-3 rounded-full backdrop-blur-sm transition-colors border border-white/20"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-            {getCartItemCount() > 0 && (
+            {cart.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-blue-950">
-                {getCartItemCount()}
+                {cart.length}
               </span>
             )}
           </button>
@@ -115,10 +117,16 @@ function App() {
             <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
               {step === 1 && <Search onValidate={handleValidateSearch} />}
               {step === 2 && travelDetails && (
-                <Options selectedOptions={selectedOptions} onToggle={toggleOption} nextStep={() => setStep(3)} prevStep={() => setStep(1)} basePrice={travelDetails.basePrice} />
+                <Options 
+                  selectedOptions={selectedOptions} 
+                  onToggle={toggleOption} 
+                  onAddToCart={addToCart} 
+                  prevStep={() => setStep(1)} 
+                  basePrice={travelDetails.basePrice} 
+                />
               )}
-              {step === 3 && travelDetails && (
-                <Checkout totalBeforeDiscount={calculateTotalBeforeDiscount()} travelDetails={travelDetails} />
+              {step === 3 && cart.length > 0 && (
+                <Checkout cart={cart} />
               )}
             </div>
           </>
@@ -130,9 +138,8 @@ function App() {
       <Cart 
         isOpen={isCartOpen} 
         onClose={() => setIsCartOpen(false)} 
-        travelDetails={travelDetails}
-        selectedOptions={selectedOptions}
-        onRemoveOption={removeOption}
+        cart={cart}
+        onRemoveItem={removeFromCart}
         onCheckout={handleCartCheckout}
       />
       <Timer />

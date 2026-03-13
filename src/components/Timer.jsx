@@ -15,12 +15,12 @@ export default function Timer() {
   const format = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className="fixed bottom-6 right-6 bg-slate-900/95 backdrop-blur-sm text-slate-100 px-5 py-3 rounded-2xl font-mono shadow-2xl z-50 flex items-center gap-3 border border-slate-700/50 transition-all hover:scale-105">
-      <div className="relative flex h-3 w-3">
+    <div className="fixed bottom-4 left-4 bg-slate-800/40 backdrop-blur-md text-white/90 px-3 py-2 rounded-xl text-xs font-mono shadow-sm z-50 flex items-center gap-2 border border-slate-700/30 transition-all hover:bg-slate-800/60">
+      <div className="relative flex h-2 w-2">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
       </div>
-      <span className="text-sm font-medium tracking-wide">Session : {format(seconds)}</span>
+      <span>Session : {format(seconds)}</span>
     </div>
   );
 }

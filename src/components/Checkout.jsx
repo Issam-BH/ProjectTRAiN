@@ -1,24 +1,48 @@
 import { useState } from 'react';
 
-export default function Checkout({ totalBeforeDiscount, travelDetails }) {
+export default function Checkout({ cart }) {
   const [isAbonne, setIsAbonne] = useState(false);
+
+  const OPTIONS = [
+    { id: 1, label: "Place tranquille", price: 3 },      
+    { id: 2, label: "Prise électrique", price: 2 },      
+    { id: 3, label: "Bagage supplémentaire", price: 5 }, 
+    { id: 4, label: "Info par SMS", price: 1 },           
+    { id: 5, label: "Garantie Annulation", price: 2.9 }   
+  ];
+
+  const calculateItemTotal = (item) => {
+    const optionsPrice = item.selectedOptions.reduce((acc, id) => {
+      const opt = OPTIONS.find(o => o.id === id);
+      return acc + (opt ? opt.price : 0);
+    }, 0);
+    return item.travelDetails.basePrice + optionsPrice;
+  };
+
+  const totalBeforeDiscount = cart.reduce((acc, item) => acc + calculateItemTotal(item), 0);
   const finalTotal = isAbonne ? totalBeforeDiscount - 10 : totalBeforeDiscount;
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md space-y-6 animate-fade-in-up">
       <h2 className="text-xl font-bold border-b pb-2">3. Récapitulatif & Paiement</h2>
       
-      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex justify-between items-center">
-        <div>
-          <p className="font-bold text-blue-900">
-            {travelDetails.departure.toUpperCase()} ➔ {travelDetails.arrival.toUpperCase()}
-          </p>
-          <p className="text-xs text-slate-600 mt-1">
-            Aller : {new Date(travelDetails.dateAller).toLocaleDateString()} à {travelDetails.timeAller}
-            {travelDetails.dateRetour && ` | Retour : ${new Date(travelDetails.dateRetour).toLocaleDateString()} à ${travelDetails.timeRetour}`}
-          </p>
+      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+        <div className="mb-4 space-y-3">
+          {cart.map((item, index) => (
+            <div key={item.id} className="flex justify-between items-center border-b border-blue-200/50 pb-2 last:border-0">
+              <div>
+                <p className="font-bold text-blue-900 text-sm">Billet {index + 1} : {item.travelDetails.departure} ➔ {item.travelDetails.arrival}</p>
+                <p className="text-xs text-slate-500">Le {new Date(item.travelDetails.dateAller).toLocaleDateString()}</p>
+              </div>
+              <span className="font-bold text-blue-900">{calculateItemTotal(item).toFixed(2)}€</span>
+            </div>
+          ))}
         </div>
-        <span className="font-black text-blue-900 text-2xl">{finalTotal.toFixed(2)}€</span>
+        
+        <div className="flex justify-between items-center pt-2 mt-2 border-t-2 border-blue-200">
+          <span className="font-bold text-blue-900">Total à payer</span>
+          <span className="font-black text-orange-600 text-2xl">{finalTotal.toFixed(2)}€</span>
+        </div>
       </div>
       
       <div className="space-y-4">
