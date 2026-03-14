@@ -1,0 +1,23 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {},
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "private": true,
+    "devDependencies": {
+        "@types/node": "^25.3.3",
+        "typescript": "^5.9.3"
+    },
+    "dependencies": {
+        "@fastify/cookie": "^11.0.2",
+        "@fastify/session": "^11.1.1",
+        "argon2": "^0.44.0",
+        "fastify": "^5.7.4",
+        "mongoose": "^9.2.3"
+    }
+}

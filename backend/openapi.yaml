@@ -1,0 +1,309 @@
+openapi: 3.0.0
+info:
+    title: API Train Trans4
+    version: 1.0.0
+    description: Documentation des endpoints du backend pour l'application de réservation de billets de train.
+
+servers:
+    - url: http://localhost:3000
+      description: Serveur de développement local
+
+components:
+    schemas:
+        Trajet:
+            type: object
+            properties:
+                _id: { type: string }
+                heure_depart: { type: string, example: '08:00' }
+                heure_arrive: { type: string, example: '10:30' }
+                gare_depart: { type: string }
+                gare_arrivee: { type: string }
+                date: { type: string, format: date-time }
+                capacite: { type: number }
+                options_disponibles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/OptionDisponibles'
+                tarifs:
+                    $ref: '#/components/schemas/Tarifs'
+
+        OptionDisponibles:
+            type: object
+            properties:
+                nom: { type: string }
+                prix: { type: number }
+                capacite: { type: number }
+
+        Tarifs:
+            type: object
+            properties:
+                prix_aller_simple: { type: number }
+                prix_aller_retour: { type: number }
+
+        PanierItem:
+            type: object
+            required: [trajet, type]
+            properties:
+                trajet: { type: string, description: 'ID du trajet' }
+                type: { type: string, enum: [aller-simple, aller-retour] }
+                options:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            nom: { type: string }
+
+        Recapitulatif:
+            type: object
+            properties:
+                articles:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            trajet: { type: object }
+                            type: { type: string }
+                            prixBase: { type: number }
+                            options: { type: array, items: { type: object } }
+                            sousTotal: { type: number }
+                prixTotal: { type: number }
+                nombreArticles: { type: number }
+
+        PaiementInfo:
+            type: object
+            required: [nom, prenom, cb, date_expiration, cvv]
+            properties:
+                nom: { type: string }
+                prenom: { type: string }
+                cb: { type: string, minLength: 16 }
+                date_expiration: { type: string, example: '12/26' }
+                cvv: { type: string, minLength: 3 }
+
+paths:
+    # --- TRAJETS ---
+    /trajets:
+        get:
+            tags: [Trajets]
+            summary: Liste les trajets disponibles
+            parameters:
+                - name: gare_depart
+                  in: query
+                  schema: { type: string }
+                - name: gare_arrivee
+                  in: query
+                  schema: { type: string }
+                - name: date
+                  in: query
+                  schema: { type: string, format: date }
+            responses:
+                '200':
+                    description: Liste de trajets
+                    content:
+                        application/json:
+                            schema:
+                                {
+                                    type: array,
+                                    items:
+                                        { $ref: '#/components/schemas/Trajet' },
+                                }
+
+    /trajets/calendrier:
+        get:
+            tags: [Trajets]
+            summary: Récupère les prix minimums par jour
+            parameters:
+                - name: gare_depart
+                  in: query
+                  required: true
+                  schema: { type: string }
+                - name: gare_arrivee
+                  in: query
+                  required: true
+                  schema: { type: string }
+            responses:
+                '200':
+                    description: Calendrier des prix
+
+    /trajets/{id}:
+        get:
+            tags: [Trajets]
+            summary: Détails d'un trajet
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema: { type: string }
+            responses:
+                '200':
+                    description: Objet Trajet
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Trajet' }
+
+    /trajets/{id}/options:
+        get:
+            tags: [Trajets]
+            summary: Options disponibles pour un trajet
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema: { type: string }
+            responses:
+                '200':
+                    description: Liste d'options
+
+    # --- PANIER ---
+    /panier:
+        post:
+            tags: [Panier]
+            summary: Ajouter un article au panier
+            requestBody:
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/PanierItem' }
+            responses:
+                '200':
+                    description: Article ajouté
+        delete:
+            tags: [Panier]
+            summary: Vider le panier
+            responses:
+                '200':
+                    description: Panier vidé
+
+    /panier/{index}:
+        delete:
+            tags: [Panier]
+            summary: Retirer un article du panier par son index
+            parameters:
+                - name: index
+                  in: path
+                  required: true
+                  schema: { type: integer }
+            responses:
+                '200':
+                    description: Article retiré
+
+    /panier/recapitulatif:
+        get:
+            tags: [Panier]
+            summary: Calculer le montant total et le récapitulatif
+            responses:
+                '200':
+                    description: Détails financiers du panier
+                    content:
+                        application/json:
+                            schema:
+                                { $ref: '#/components/schemas/Recapitulatif' }
+
+    # --- PAIEMENT ---
+    /paiement:
+        get:
+            tags: [Paiement]
+            summary: Obtenir le montant final et la référence (nécessite connexion)
+            responses:
+                '200':
+                    description: Référence et montant
+        post:
+            tags: [Paiement]
+            summary: Effectuer le paiement et enregistrer la réservation (nécessite connexion)
+            requestBody:
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/PaiementInfo' }
+            responses:
+                '200':
+                    description: Paiement réussi, billets créés
+
+    # --- UTILISATEUR & AUTH ---
+    /register:
+        post:
+            tags: [Utilisateur]
+            summary: Création de compte
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [login, password, nom, prenom]
+                            properties:
+                                login: { type: string }
+                                password: { type: string }
+                                nom: { type: string }
+                                prenom: { type: string }
+                                numero_abonnement: { type: string }
+            responses:
+                '201':
+                    description: Utilisateur créé
+
+    /login:
+        post:
+            tags: [Utilisateur]
+            summary: Connexion
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                login: { type: string }
+                                password: { type: string }
+            responses:
+                '200':
+                    description: Connexion réussie
+
+    /logout:
+        post:
+            tags: [Utilisateur]
+            summary: Déconnexion
+            responses:
+                '200':
+                    description: Session détruite
+
+    /me:
+        get:
+            tags: [Utilisateur]
+            summary: Profil de l'utilisateur connecté
+            responses:
+                '200':
+                    description: Données utilisateur
+
+    # --- SESSION & TIME-OUT ---
+    /session/time-left:
+        get:
+            tags: [Session]
+            summary: Temps restant avant expiration (US 7.1.2)
+            responses:
+                '200':
+                    description: Secondes restantes
+
+    /session:
+        delete:
+            tags: [Session]
+            summary: Fermer la session (US 7.1.3)
+            responses:
+                '200':
+                    description: Session fermée
+
+    /session/refresh:
+        post:
+            tags: [Session]
+            summary: Prolonger la session
+            responses:
+                '200':
+                    description: Timer réinitialisé
+
+    # --- BILLETS ---
+    /billets/{reference}:
+        get:
+            tags: [Billets]
+            summary: Consulter les billets d'une réservation (US 8.1.1)
+            parameters:
+                - name: reference
+                  in: path
+                  required: true
+                  schema: { type: string }
+            responses:
+                '200':
+                    description: Liste de billets

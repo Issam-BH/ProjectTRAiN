@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "alwaysStrict": true,
+        "strict": true,
+        "outDir": "./dist",
+        "module": "nodenext",
+        "lib": ["ESNext"],
+        "target": "es2020"
+    }
+}
