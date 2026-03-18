@@ -6,8 +6,31 @@ const OPTIONS = [
   { id: 5, label: "Garantie Annulation", price: 2.9 }   
 ];
 
-export default function Options({ selectedOptions, onToggle, onAddToCart, prevStep, basePrice }) {
+export default function Options({ selectedOptions, onToggle, onAddToCart, prevStep, travelDetails }) {
   const totalOptions = selectedOptions.reduce((sum, id) => sum + OPTIONS.find(o => o.id === id).price, 0);
+
+  const handleAddToCart = async () => {
+    try {
+      const res = await fetch('/api/panier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trajet: travelDetails.allerId,
+          type: travelDetails.dateRetour ? "aller-retour" : "aller-simple",
+          options: selectedOptions.map(id => ({ nom: OPTIONS.find(o => o.id === id).label }))
+        })
+      });
+      
+      if (res.ok) {
+        onAddToCart();
+      } else {
+        const errorData = await res.json();
+        alert(`Erreur: ${errorData.message}`);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <div className="space-y-4 animate-fade-in-up">
@@ -28,11 +51,11 @@ export default function Options({ selectedOptions, onToggle, onAddToCart, prevSt
       ))}
       <div className="bg-blue-900 text-white p-4 rounded-lg flex justify-between items-center font-bold shadow-lg">
         <span>Sous-total Billet :</span>
-        <span className="text-xl">{(basePrice + totalOptions).toFixed(2)}€</span>
+        <span className="text-xl">{(travelDetails.basePrice + totalOptions).toFixed(2)}€</span>
       </div>
       <div className="grid grid-cols-2 gap-4 mt-6">
         <button onClick={prevStep} className="border py-3 rounded hover:bg-slate-100 font-medium transition-colors">Retour</button>
-        <button onClick={onAddToCart} className="bg-orange-500 text-white py-3 rounded font-bold shadow-md hover:bg-orange-600 transition-colors">Ajouter au Panier</button>
+        <button onClick={handleAddToCart} className="bg-orange-500 text-white py-3 rounded font-bold shadow-md hover:bg-orange-600 transition-colors">Ajouter au Panier</button>
       </div>
     </div>
   );

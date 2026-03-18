@@ -1,14 +1,33 @@
 import { useState, useEffect } from 'react';
 
 export default function Timer() {
-  const [seconds, setSeconds] = useState(180); 
+  const [seconds, setSeconds] = useState(180);
+
+  useEffect(() => {
+    const fetchTimeLeft = async () => {
+      try {
+        const res = await fetch('/api/session/time-left');
+        const data = await res.json();
+        if (data.timeLeft > 0) {
+          setSeconds(Math.floor(data.timeLeft));
+        }
+      } catch (e) { 
+        console.error(e); 
+      }
+    };
+
+    fetchTimeLeft();
+    const intervalId = setInterval(fetchTimeLeft, 10000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     if (seconds > 0) {
       const timer = setInterval(() => setSeconds(s => s - 1), 1000);
       return () => clearInterval(timer);
     } else {
-      alert("Temps écoulé (3 mn) : La session a expiré !"); 
+      alert("Temps écoulé : La session a expiré !"); 
     }
   }, [seconds]);
 

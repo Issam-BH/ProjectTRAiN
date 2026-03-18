@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Search from './components/Search';
 import Options from './components/Options';
 import Checkout from './components/Checkout';
@@ -14,23 +14,10 @@ function App() {
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [travelDetails, setTravelDetails] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cart, setCart] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
 
   const toggleOption = (id) => {
     setSelectedOptions(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
-
-  const removeOption = (id) => {
-    setSelectedOptions(prev => prev.filter(x => x !== id));
-  };
-
-  const calculateTotalBeforeDiscount = () => {
-    const base = travelDetails ? travelDetails.basePrice : 0;
-    const optsPrice = selectedOptions.reduce((acc, id) => {
-      const prices = { 1:3, 2:2, 3:5, 4:1, 5:2.9 };
-      return acc + (prices[id] || 0);
-    }, 0);
-    return base + optsPrice;
   };
 
   const handleValidateSearch = (details) => {
@@ -39,25 +26,28 @@ function App() {
   };
 
   const addToCart = () => {
-    const newItem = {
-      id: Math.random().toString(36).substring(2, 9),
-      travelDetails,
-      selectedOptions
-    };
-    setCart([...cart, newItem]);
+    fetchCartCount();
     setTravelDetails(null);
     setSelectedOptions([]);
     setStep(1);
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (id) => {
-    setCart(cart.filter(item => item.id !== id));
-    if (cart.length === 1) {
-      setStep(1);
-      setIsCartOpen(false);
+  const fetchCartCount = async () => {
+    try {
+      const res = await fetch('/api/panier/recapitulatif');
+      const data = await res.json();
+      if (data && data.nombreArticles !== undefined) {
+        setCartCount(data.nombreArticles);
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
+
+  useEffect(() => {
+    fetchCartCount();
+  }, []);
 
   const goHome = () => {
     setView('booking');
@@ -70,13 +60,6 @@ function App() {
     setIsCartOpen(false);
     setView('booking');
     setStep(3);
-  };
-
-  const getCartItemCount = () => {
-    let count = 0;
-    if (travelDetails) count += 1;
-    count += selectedOptions.length;
-    return count;
   };
 
   return (
@@ -111,9 +94,9 @@ function App() {
             className="relative bg-white/10 hover:bg-white/20 p-3 rounded-full backdrop-blur-sm transition-colors border border-white/20"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-            {getCartItemCount() > 0 && (
+            {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-blue-950">
-                {getCartItemCount()}
+                {cartCount}
               </span>
             )}
           </button>
@@ -148,11 +131,11 @@ function App() {
                   onToggle={toggleOption} 
                   onAddToCart={addToCart} 
                   prevStep={() => setStep(1)} 
-                  basePrice={travelDetails.basePrice} 
+                  travelDetails={travelDetails} 
                 />
               )}
-              {step === 3 && cart.length > 0 && (
-                <Checkout cart={cart} />
+              {step === 3 && (
+                <Checkout onPaymentSuccess={goHome} onCartUpdate={fetchCartCount} />
               )}
             </div>
           </>
@@ -165,9 +148,8 @@ function App() {
       <Cart 
         isOpen={isCartOpen} 
         onClose={() => setIsCartOpen(false)} 
-        cart={cart}
-        onRemoveItem={removeFromCart}
         onCheckout={handleCartCheckout}
+        onCartUpdate={fetchCartCount}
       />
       <Timer />
     </div>

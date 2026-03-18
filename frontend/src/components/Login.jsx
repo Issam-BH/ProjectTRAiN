@@ -4,10 +4,27 @@ export default function Login({ onBack }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    alert("Connexion réussie !");
-    onBack();
+    
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: email, password: password }) 
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`Connexion réussie ! Bienvenue ${data.user.prenom}`);
+        onBack();
+      } else {
+        alert(`Erreur : ${data.message}`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (

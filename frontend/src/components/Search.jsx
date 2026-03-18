@@ -11,22 +11,46 @@ export default function Search({ onValidate }) {
   const [selectedAller, setSelectedAller] = useState(null);
   const [selectedRetour, setSelectedRetour] = useState(null);
 
-  const generateTrains = (basePrice) => [
-    { id: Math.random(), dep: '06:20', arr: '08:26', price: basePrice + 12 },
-    { id: Math.random(), dep: '08:00', arr: '10:04', price: basePrice },
-    { id: Math.random(), dep: '12:45', arr: '14:50', price: basePrice + 15 },
-    { id: Math.random(), dep: '18:30', arr: '20:35', price: basePrice + 5 }
-  ];
-
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!departure || !arrival || !dateAller) {
       alert("Veuillez renseigner le départ, l'arrivée et la date d'aller.");
       return;
     }
-    setTrainsAller(generateTrains(45));
-    setTrainsRetour(dateRetour ? generateTrains(49) : null);
-    setSelectedAller(null);
-    setSelectedRetour(null);
+
+    try {
+      const res = await fetch(`/api/trajets?gare_depart=${departure}&gare_arrivee=${arrival}&date=${dateAller}`);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Erreur lors de la recherche');
+
+      const formattedTrains = data.map(t => ({
+        id: t._id,
+        dep: t.heure_depart,
+        arr: t.heure_arrive,
+        price: t.tarifs.prix_aller_simple
+      }));
+
+      setTrainsAller(formattedTrains);
+      
+      if (dateRetour) {
+        const resRetour = await fetch(`/api/trajets?gare_depart=${arrival}&gare_arrivee=${departure}&date=${dateRetour}`);
+        const dataRetour = await resRetour.json();
+        setTrainsRetour(dataRetour.map(t => ({
+          id: t._id,
+          dep: t.heure_depart,
+          arr: t.heure_arrive,
+          price: t.tarifs.prix_aller_simple
+        })));
+      } else {
+        setTrainsRetour(null);
+      }
+      
+      setSelectedAller(null);
+      setSelectedRetour(null);
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de la recherche des trajets.");
+    }
   };
 
   const handleValidate = () => {
@@ -38,7 +62,9 @@ export default function Search({ onValidate }) {
       dateRetour,
       timeAller: selectedAller.dep,
       timeRetour: selectedRetour?.dep,
-      basePrice
+      basePrice,
+      allerId: selectedAller.id,
+      retourId: selectedRetour?.id
     });
   };
 
