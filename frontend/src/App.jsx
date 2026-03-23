@@ -15,6 +15,9 @@ function App() {
   const [travelDetails, setTravelDetails] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  
+  // NOUVEAU : État pour stocker l'utilisateur connecté
+  const [user, setUser] = useState(null);
 
   const toggleOption = (id) => {
     setSelectedOptions(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -45,8 +48,36 @@ function App() {
     }
   };
 
+  // NOUVEAU : Fonction pour vérifier si l'utilisateur est connecté
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/me');
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data); // On stocke les infos de l'utilisateur (nom, prenom, etc.)
+      } else {
+        setUser(null);
+      }
+    } catch (e) {
+      setUser(null);
+    }
+  };
+
+  // NOUVEAU : Fonction pour se déconnecter
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+      setUser(null);
+      setCartCount(0); // On vide la pastille du panier visuellement
+      goHome();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     fetchCartCount();
+    checkAuth(); // On vérifie la session au chargement de l'app
   }, []);
 
   const goHome = () => {
@@ -56,10 +87,31 @@ function App() {
     setSelectedOptions([]);
   };
 
-  const handleCartCheckout = () => {
-    setIsCartOpen(false);
-    setView('booking');
-    setStep(3);
+  const handleCartCheckout = async () => {
+    if (user) {
+      // Si on sait déjà qu'il est connecté
+      setIsCartOpen(false);
+      setView('booking');
+      setStep(3);
+    } else {
+      // Sinon on vérifie par précaution
+      try {
+        const res = await fetch('/api/me');
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data);
+          setIsCartOpen(false);
+          setView('booking');
+          setStep(3);
+        } else {
+          alert("Vous devez vous connecter ou créer un compte pour procéder au paiement.");
+          setIsCartOpen(false);
+          setView('login');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   return (
@@ -82,12 +134,28 @@ function App() {
           >
             Mes Billets
           </span>
-          <span 
-            className="hover:text-orange-400 cursor-pointer transition-colors hidden sm:block"
-            onClick={() => setView('login')}
-          >
-            Connexion
-          </span>
+          
+          {/* NOUVEAU : Affichage conditionnel selon si l'utilisateur est connecté ou non */}
+          {user ? (
+            <div className="hidden sm:flex items-center gap-4">
+              <span className="text-orange-400 cursor-default">
+                Mon profil ({user.prenom})
+              </span>
+              <button 
+                onClick={handleLogout}
+                className="hover:text-red-400 cursor-pointer transition-colors text-xs border border-white/30 px-2 py-1 rounded"
+              >
+                Déconnexion
+              </button>
+            </div>
+          ) : (
+            <span 
+              className="hover:text-orange-400 cursor-pointer transition-colors hidden sm:block"
+              onClick={() => setView('login')}
+            >
+              Connexion
+            </span>
+          )}
           
           <button 
             onClick={() => setIsCartOpen(true)}
@@ -142,7 +210,21 @@ function App() {
         )}
 
         {view === 'tickets' && <MyTickets onBack={goHome} />}
-        {view === 'login' && <Login onBack={goHome} />}
+        
+        {view === 'login' && (
+          <Login 
+            onBack={goHome} 
+            onSuccess={() => {
+              checkAuth(); // NOUVEAU : Met à jour l'état utilisateur (pour le header) juste après la connexion réussie
+              if (cartCount > 0) {
+                setView('booking');
+                setStep(3); 
+              } else {
+                goHome(); 
+              }
+            }} 
+          />
+        )}
       </main>
 
       <Cart 

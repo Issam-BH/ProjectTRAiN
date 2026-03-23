@@ -68,6 +68,13 @@ export default function Search({ onValidate }) {
     });
   };
 
+  const resetSearch = () => {
+    setTrainsAller(null);
+    setTrainsRetour(null);
+    setSelectedAller(null);
+    setSelectedRetour(null);
+  };
+
   return (
     <div className="animate-fade-in-up">
       <h2 className="text-3xl font-black mb-8 text-blue-950">Quel est votre trajet ?</h2>
@@ -102,47 +109,25 @@ export default function Search({ onValidate }) {
         </button>
       ) : (
         <div className="animate-fade-in-up mt-8">
+          
+          {/* --- TRAJETS ALLER --- */}
           <div className="mb-6">
             <h3 className="text-lg font-bold text-blue-950 mb-3 flex items-center gap-2">
               <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
               Trajets Aller : {departure} ➔ {arrival}
             </h3>
-            <div className="grid gap-3">
-              {trainsAller.map(train => (
-                <div 
-                  key={train.id}
-                  onClick={() => setSelectedAller(train)}
-                  className={`cursor-pointer border-2 rounded-xl p-4 flex justify-between items-center transition-all ${selectedAller?.id === train.id ? 'border-orange-500 bg-orange-50' : 'border-slate-100 bg-white hover:border-blue-200'}`}
-                >
-                  <div className="flex gap-4 items-center">
-                    <div className="text-center">
-                      <p className="text-lg font-black text-blue-950">{train.dep}</p>
-                    </div>
-                    <div className="w-12 h-0.5 bg-slate-300 relative">
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 border-t-2 border-r-2 border-slate-300 rotate-45"></div>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-black text-blue-950">{train.arr}</p>
-                    </div>
-                  </div>
-                  <span className="font-black text-xl text-orange-600">{train.price}€</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {trainsRetour && (
-            <div className="mb-6">
-              <h3 className="text-lg font-bold text-blue-950 mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                Trajets Retour : {arrival} ➔ {departure}
-              </h3>
+            
+            {trainsAller.length === 0 ? (
+              <div className="p-6 bg-orange-50 border border-orange-100 rounded-xl text-center">
+                <p className="font-bold text-orange-600">Aucun trajet aller trouvé à cette date.</p>
+              </div>
+            ) : (
               <div className="grid gap-3">
-                {trainsRetour.map(train => (
+                {trainsAller.map(train => (
                   <div 
                     key={train.id}
-                    onClick={() => setSelectedRetour(train)}
-                    className={`cursor-pointer border-2 rounded-xl p-4 flex justify-between items-center transition-all ${selectedRetour?.id === train.id ? 'border-orange-500 bg-orange-50' : 'border-slate-100 bg-white hover:border-blue-200'}`}
+                    onClick={() => setSelectedAller(train)}
+                    className={`cursor-pointer border-2 rounded-xl p-4 flex justify-between items-center transition-all ${selectedAller?.id === train.id ? 'border-orange-500 bg-orange-50' : 'border-slate-100 bg-white hover:border-blue-200'}`}
                   >
                     <div className="flex gap-4 items-center">
                       <div className="text-center">
@@ -159,16 +144,65 @@ export default function Search({ onValidate }) {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* --- TRAJETS RETOUR --- */}
+          {trainsRetour !== null && (
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-blue-950 mb-3 flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                Trajets Retour : {arrival} ➔ {departure}
+              </h3>
+              
+              {trainsRetour.length === 0 ? (
+                <div className="p-6 bg-orange-50 border border-orange-100 rounded-xl text-center">
+                  <p className="font-bold text-orange-600">Aucun trajet retour trouvé à cette date.</p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {trainsRetour.map(train => (
+                    <div 
+                      key={train.id}
+                      onClick={() => setSelectedRetour(train)}
+                      className={`cursor-pointer border-2 rounded-xl p-4 flex justify-between items-center transition-all ${selectedRetour?.id === train.id ? 'border-orange-500 bg-orange-50' : 'border-slate-100 bg-white hover:border-blue-200'}`}
+                    >
+                      <div className="flex gap-4 items-center">
+                        <div className="text-center">
+                          <p className="text-lg font-black text-blue-950">{train.dep}</p>
+                        </div>
+                        <div className="w-12 h-0.5 bg-slate-300 relative">
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 border-t-2 border-r-2 border-slate-300 rotate-45"></div>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-black text-blue-950">{train.arr}</p>
+                        </div>
+                      </div>
+                      <span className="font-black text-xl text-orange-600">{train.price}€</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          <button 
-            onClick={handleValidate}
-            disabled={!selectedAller || (trainsRetour && !selectedRetour)}
-            className="w-full bg-blue-950 text-white font-black text-lg py-4 rounded-xl mt-4 shadow-lg hover:bg-blue-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Continuer
-          </button>
+          {/* --- BOUTONS D'ACTION --- */}
+          <div className="flex gap-4 mt-6">
+            <button 
+              onClick={resetSearch}
+              className="w-1/3 bg-slate-200 text-slate-700 font-black text-lg py-4 rounded-xl shadow-sm hover:bg-slate-300 transition-all"
+            >
+              Modifier
+            </button>
+            
+            <button 
+              onClick={handleValidate}
+              disabled={!selectedAller || (trainsRetour !== null && !selectedRetour)}
+              className="w-2/3 bg-blue-950 text-white font-black text-lg py-4 rounded-xl shadow-lg hover:bg-blue-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continuer
+            </button>
+          </div>
         </div>
       )}
     </div>
