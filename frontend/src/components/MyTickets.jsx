@@ -9,23 +9,25 @@ export default function MyTickets({ onBack }) {
     const fetchMyTickets = async () => {
       try {
         const res = await fetch('/api/me');
-        if (!res.ok) {
-          throw new Error('Non autorisé');
-        }
+        if (!res.ok) throw new Error('Non autorisé');
         const user = await res.json();
-        setTickets(user.billets);
+        
+        if (user.billets && user.billets.length > 0) {
+          // Tri : Les plus récents en haut. 
+          // On utilise une copie pour ne pas muter l'original, puis on inverse.
+          const sorted = [...user.billets].reverse();
+          setTickets(sorted);
+        }
       } catch (err) {
         setError('Vous devez vous connecter pour voir vos billets.');
       } finally {
         setLoading(false);
       }
     };
-
     fetchMyTickets();
   }, []);
 
   const handleDownloadPDF = (identifiant) => {
-    // Cela ouvrira la route de téléchargement et forcera l'enregistrement du PDF
     window.open(`/api/billets/${identifiant}/pdf`, '_blank');
   };
 
@@ -36,7 +38,7 @@ export default function MyTickets({ onBack }) {
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-black text-blue-950">Mes Billets</h2>
         <button onClick={onBack} className="text-sm font-bold text-orange-500 hover:text-orange-600 transition-colors">
-          ← Retour à l'accueil
+          ← Accueil
         </button>
       </div>
 
@@ -51,24 +53,44 @@ export default function MyTickets({ onBack }) {
       ) : (
         <div className="space-y-4">
           {tickets.map((ticket, i) => (
-            <div key={ticket.identifiant || i} className="border-2 border-slate-100 rounded-2xl p-5 hover:border-blue-200 transition-colors flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50">
-              <div className="flex-1 w-full">
-                <div className="flex justify-between items-start mb-1">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Réf: {ticket.identifiant}</span>
-                </div>
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-lg font-black text-blue-950">Trajet ID: {ticket.reservation.trajet.slice(-6).toUpperCase()}</span>
-                </div>
-                <p className="text-sm text-slate-600 font-medium">Type : {ticket.reservation.type}</p>
+            <div key={ticket.identifiant || i} className="border-2 border-slate-100 rounded-2xl overflow-hidden hover:border-blue-200 transition-colors bg-slate-50">
+              {/* Entête du billet avec type et référence */}
+              <div className="bg-blue-950 p-3 flex justify-between items-center text-white">
+                <span className="text-[10px] font-black uppercase tracking-widest">Réf: {ticket.identifiant}</span>
+                <span className="text-[10px] bg-orange-500 px-2 py-0.5 rounded font-black uppercase">
+                  {ticket.reservation.type === 'retour' ? 'RETOUR' : 'ALLER'}
+                </span>
               </div>
-              
-              <button 
-                onClick={() => handleDownloadPDF(ticket.identifiant)}
-                className="w-full sm:w-auto bg-blue-950 text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-900 transition-all shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                PDF
-              </button>
+
+              <div className="p-5 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex-1 w-full">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-lg font-black text-blue-950 uppercase">
+                      Trajet #{ticket.reservation.trajet.slice(-6).toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600 font-medium italic">
+                    Options : {ticket.reservation.options && ticket.reservation.options.length > 0 
+                      ? ticket.reservation.options.map(o => o.nom).join(', ') 
+                      : 'Aucune'}
+                  </p>
+                </div>
+                
+                <button 
+                  onClick={() => handleDownloadPDF(ticket.identifiant)}
+                  className="w-full sm:w-auto bg-blue-950 text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-900 transition-all shadow-md flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                  PDF
+                </button>
+              </div>
+
+              {/* Date de paiement / achat en bas */}
+              <div className="bg-white px-5 py-2 border-t border-slate-100 flex justify-between items-center">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                  Billet généré le : {new Date().toLocaleDateString('fr-FR')}
+                </span>
+              </div>
             </div>
           ))}
         </div>

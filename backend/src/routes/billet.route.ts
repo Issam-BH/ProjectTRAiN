@@ -9,7 +9,6 @@ export const createBilletRoute: Route = (app, { Trajet, Utilisateur }) => {
         async (request: FastifyRequest<{ Params: { reference: string } }>, reply: FastifyReply) => {
             const { reference } = request.params
             const { paiement, panier } = request.session
-
             const currentRef = `RESA-${request.session.sessionId.slice(0, 8).toUpperCase()}`
 
             if (reference !== currentRef && reference !== paiement?.numero_autorisation) {
@@ -17,7 +16,7 @@ export const createBilletRoute: Route = (app, { Trajet, Utilisateur }) => {
             }
 
             if (!panier || panier.length === 0) {
-                return reply.status(400).send({ message: 'Aucun billet associé à cette réservation' })
+                return reply.status(400).send({ message: 'Aucun billet trouvé' })
             }
 
             const billets = await Promise.all(
@@ -43,41 +42,21 @@ export const createBilletRoute: Route = (app, { Trajet, Utilisateur }) => {
     )
 
     app.get(
-        '/billets/:reference/imprimer',
-        async (request: FastifyRequest<{ Params: { reference: string } }>) => {
-            const { reference } = request.params
-            const data = await app.inject({ method: 'GET', url: `/billets/${reference}` })
-
-            return {
-                ...(data.json() as any),
-                date_impression: new Date().toISOString(),
-                instructions: 'Veuillez présenter ce document lors du contrôle.',
-            }
-        }
-    )
-
-    // --- NOUVELLE ROUTE : Télécharger le PDF d'un billet précis ---
-    app.get(
         '/billets/:identifiant/pdf',
         async (request: FastifyRequest<{ Params: { identifiant: string } }>, reply: FastifyReply) => {
-            if (!request.session.userId) {
-                return reply.status(401).send({ message: 'Vous devez être connecté' })
-            }
+            if (!request.session.userId) return reply.status(401).send({ message: 'Non connecté' })
 
             const user = await Utilisateur.findById(request.session.userId).exec()
             if (!user) return reply.status(404).send({ message: 'Utilisateur introuvable' })
 
-            // Trouver le billet correspondant dans le compte de l'utilisateur
             const billet = user.billets.find((b: any) => b.identifiant === request.params.identifiant)
-            if (!billet) return reply.status(404).send({ message: 'Billet non trouvé dans votre compte' })
+            if (!billet) return reply.status(404).send({ message: 'Billet non trouvé' })
 
             const trajet = await Trajet.findById(billet.reservation.trajet).exec()
             if (!trajet) return reply.status(404).send({ message: 'Trajet introuvable' })
 
-            // Génération à la volée
-            const pdfBuffer = await generateTicketPDF(billet, trajet, `${user.nom} ${user.prenom}`)
+            const pdfBuffer = await generateTicketPDF([{ billet, trajet }], `${user.nom} ${user.prenom}`)
 
-            // Forcer le téléchargement côté navigateur
             reply.header('Content-Type', 'application/pdf')
             reply.header('Content-Disposition', `attachment; filename="billet-${billet.identifiant}.pdf"`)
             
