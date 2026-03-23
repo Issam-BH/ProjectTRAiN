@@ -1,0 +1,9 @@
+services:
+  db:
+    image: mongodb/mongodb-community-server:8.0-ubi8
+    ports:
+      - 27017:27017
+    volumes:
+      - data:/data/db
+volumes:
+  data: {}

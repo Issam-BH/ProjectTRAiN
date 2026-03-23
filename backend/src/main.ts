@@ -2,7 +2,9 @@ import './session.js'
 
 import fastifyCookie from '@fastify/cookie'
 import fastifySession from '@fastify/session'
+import fastifyStatic from '@fastify/static'
 import fastify from 'fastify'
+import path from 'node:path'
 import {
     COOKIE_SECRET,
     DEV,
@@ -44,9 +46,16 @@ async function main() {
 
     const db = await createConnection(MONGODB_URI)
 
-    for (const route of routes) {
-        route(app, db)
-    }
+    app.register((app) => {
+        for (const route of routes) {
+            route(app, db)
+        }
+    }, { prefix: '/api' })
+
+    app.register(fastifyStatic, {
+        root: path.join(__dirname, './public')
+    })
+
 
     app.listen({ port: 3000, host: '0.0.0.0' })
 }
